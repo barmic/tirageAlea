@@ -1,0 +1,31 @@
+body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+header {
+    background-color: tomato;
+}
+
+p {
+    text-align: center;
+}
+
+
+.breadcrumb {
+    background-color: rgb(99, 71, 255);
+}
+
+.peoples {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.people {
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: row;
+    margin-bottom: 1em;
+}

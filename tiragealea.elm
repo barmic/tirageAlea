@@ -12,7 +12,7 @@ main =
     , view = view
     }
 
-type StateNav = Participants | Template | Finished
+type StateNav = Participants | Mail | Finished
 
 type alias Participant =
   { name: String
@@ -41,11 +41,28 @@ type Msg = NewParticipant | NewName String | NewMail String | DelParticipant Str
 
 view : Model -> Html Msg
 view model =
-  div [class "all"]
-    [ header [] [ h1 [] [ text "Tirage alea"]]
-    , section [class "breadcrumb"] [ text "Inscriptions > Mail" ]
-    , section [class "peoples"] ((listParticipants model) ++ [newParticipantView model])
-    ]
+  case model.state of
+    Participants ->
+      div [class "all"]
+        [ header [] [ h1 [] [ text "Tirage alea"]]
+        , section [class "peoples"] ([p [] [text "Inscrivez la liste des participants"]] ++ (listParticipants model) ++ [newParticipantView model])
+        , button [onClick Next] [ text "Next!" ]
+        ]
+    Mail ->
+      div [class "all"]
+        [ header [] [ h1 [] [ text "Tirage alea"]]
+        , section [class "peoples"]
+        [ p [] [ text "Vous pouvez personnaliser les mails envoyés" ]
+        , input [ placeholder "Sujet du mail"] [ text "Noël arrive - A vos cadeaux !"]
+        , textarea [ placeholder "Contenu du mail"] [ text ""]
+        ]
+        , button [onClick Next] [ text "Send!" ]
+        ]
+    Finished ->
+      div [class "all"]
+        [ header [] [ h1 [] [ text "Tirage alea"]]
+        , section [class "peoples"] [p [] [text "Les participants ont reçu le mail leur indiquant à qui faire un cadeau"]]
+        ]
 
 newParticipantView : Model -> Html Msg
 newParticipantView model =
@@ -65,7 +82,7 @@ listParticipants model =
       ++
       (model.participants
         |> List.filter (\p -> p.name /= part.name)
-        |> List.map (\p -> option [selected (p.name == (Maybe.withDefault "" part.partner))] [ text p.name])))
+        |> List.map (\p -> option [onClick (NewPartner part.name p.name), selected (p.name == (Maybe.withDefault "" part.partner))] [ text p.name ])))
     ])) model.participants
 
 update : Msg -> Model -> (Model, Cmd Msg)
@@ -79,9 +96,13 @@ update msg model =
     NewMail mail -> ( { model | newMail = Just mail }, Cmd.none )
     DelParticipant name -> (delParticipant model name, Cmd.none )
     NewPartner a b ->
+      -- TODO clean previous couple
       ( { model | participants = (List.map (\p -> {p | partner = if p.name == a then Just b else if p.name == b then Just a else p.partner }) model.participants)
         }, Cmd.none )
-    Next -> ( { model | state = Template}, Cmd.none )
+    Next -> ( { model | state = case model.state of
+        Participants -> Mail
+        Mail -> Finished
+        Finished -> Finished}, Cmd.none )
 
 -- TODO check already exists
 -- TODO check valid mail

@@ -12,6 +12,11 @@ p {
     text-align: center;
 }
 
+.all {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
 
 .breadcrumb {
     background-color: rgb(99, 71, 255);

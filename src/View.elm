@@ -1,4 +1,5 @@
 module View exposing (view)
+
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
@@ -9,13 +10,13 @@ view model =
   case model.state of
     Participants ->
       div [class "all"]
-        [ header [] [ h1 [] [ text "Tirage alea"]]
+        [ header [] [ h1 [] [ text "Tirage Alea"]]
         , section [class "peoples"] ([p [] [text "Inscrivez la liste des participants"]] ++ (listParticipants model) ++ [newParticipantView model])
-        , button [onClick Next] [ text "Next!" ]
+        , button [onClick Next, disabled (List.isEmpty model.participants)] [ text "Next!" ]
         ]
     Mail ->
       div [class "all"]
-        [ header [] [ h1 [] [ text "Tirage alea"]]
+        [ header [] [ h1 [] [ text "Tirage Alea"]]
         , section [class "peoples"]
         [ p [] [ text "Vous pouvez personnaliser les mails envoyés" ]
         , input [ placeholder "Sujet du mail"] [ text "Noël arrive - A vos cadeaux !"]
@@ -25,7 +26,7 @@ view model =
         ]
     Finished ->
       div [class "all"]
-        [ header [] [ h1 [] [ text "Tirage alea"]]
+        [ header [] [ h1 [] [ text "Tirage Alea"]]
         , section [class "peoples"] [p [] [text "Les participants ont reçu le mail leur indiquant à qui faire un cadeau"]]
         ]
 
@@ -35,8 +36,12 @@ newParticipantView model =
          [ text "Participant"
          , input [ placeholder "Nom", value (Maybe.withDefault "" model.newName), autofocus True, onInput NewName ][]
          , input [ placeholder "Mail", value (Maybe.withDefault "" model.newMail), onInput NewMail ][]
-         , button [onClick NewParticipant] [ text "+" ]
+         , button [onClick NewParticipant, disabled (notReadyNewParticipant model)] [ text "+" ]
          ]
+
+notReadyNewParticipant : Model -> Bool
+notReadyNewParticipant model =
+  model.newName == Nothing || model.newMail == Nothing 
 
 listParticipants : Model -> List (Html Msg)
 listParticipants model =

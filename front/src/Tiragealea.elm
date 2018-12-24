@@ -21,8 +21,9 @@ init _ =
    , newName = Nothing
    , newMail = Nothing
    , mapping = Dict.empty
+   , mailSubject = Nothing
+   , mailBody = Nothing
    }, Cmd.none)
 
 subscriptions : Model -> Sub Msg
-subscriptions model =
-  Sub.none
+subscriptions model = Sub.none

@@ -19,10 +19,10 @@ view model =
         [ header [] [ h1 [] [ text "Tirage Alea"]]
         , section [class "peoples"]
         [ p [] [ text "Vous pouvez personnaliser les mails envoyés" ]
-        , input [ placeholder "Sujet du mail"] [ text "Noël arrive - A vos cadeaux !"]
-        , textarea [ placeholder "Contenu du mail"] [ text ""]
+        , input [ placeholder "Sujet du mail", onInput NewSubject] [ text "Noël arrive - A vos cadeaux !"]
+        , textarea [ placeholder "Contenu du mail", onInput NewBody] [ text ""]
         ]
-        , button [onClick Next] [ text "Send!" ]
+        , button [onClick Next, disabled (notReadySendMail model)] [ text "Send!" ]
         ]
     Finished ->
       div [class "all"]
@@ -41,7 +41,11 @@ newParticipantView model =
 
 notReadyNewParticipant : Model -> Bool
 notReadyNewParticipant model =
-  model.newName == Nothing || model.newMail == Nothing 
+  model.newName == Nothing || model.newMail == Nothing
+
+notReadySendMail : Model -> Bool
+notReadySendMail model =
+  model.mailSubject == Nothing || model.mailBody == Nothing
 
 listParticipants : Model -> List (Html Msg)
 listParticipants model =

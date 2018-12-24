@@ -9,14 +9,19 @@ update msg model =
       case [model.newName, model.newMail] of
           [Just name, Just mail] -> (newParticipant model name mail, Cmd.none )
           _ -> ( model, Cmd.none ) -- ignore add if no name or no mail
-    NewName name -> ( { model | newName = Just name }, Cmd.none )
-    NewMail mail -> ( { model | newMail = Just mail }, Cmd.none )
+    NewName name -> ( { model | newName = (noEmpty name)}, Cmd.none )
+    NewMail mail -> ( { model | newMail = (noEmpty mail)}, Cmd.none )
     DelParticipant name -> (delParticipant model name, Cmd.none )
     NewPartner a b -> ( newPartner model a b, Cmd.none )
+    NewSubject subject -> ( { model | mailSubject = (noEmpty subject) }, Cmd.none )
+    NewBody body -> ( { model | mailBody = (noEmpty body) }, Cmd.none )
     Next -> ( { model | state = case model.state of
       Participants -> Mail
       Mail -> Finished
       Finished -> Finished}, Cmd.none )
+
+noEmpty : String -> Maybe String
+noEmpty a = if a == "" then Nothing else Just a
 
 -- TODO check valid mail
 newParticipant : Model -> String -> String -> Model
@@ -36,6 +41,7 @@ newPartner model a b =
     participants = (List.map (\p -> {p | partner = (setPartner a b p) }) model.participants)
   }
 
+-- TODO "" should be Nothing
 setPartner : String -> String -> Participant -> Maybe String
 setPartner a b part =
   if part.partner == Just a && part.name /= b then Nothing

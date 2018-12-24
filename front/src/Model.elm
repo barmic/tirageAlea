@@ -15,7 +15,9 @@ type alias Model =
   , participants: List Participant
   , newName: Maybe String
   , newMail: Maybe String
+  , mailSubject: Maybe String
+  , mailBody: Maybe String
   , mapping: Dict String (List String)
   }
 
-type Msg = NewParticipant | NewName String | NewMail String | DelParticipant String | NewPartner String String | Next
+type Msg = NewParticipant | NewName String | NewMail String | DelParticipant String | NewPartner String String | Next | NewSubject String | NewBody String

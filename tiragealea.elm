@@ -3,6 +3,9 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Random
+import Http
+import Dict exposing (Dict)
+import Json.Encode as JS
 
 main =
   Browser.element
@@ -25,6 +28,7 @@ type alias Model =
   , participants: List Participant
   , newName: Maybe String
   , newMail: Maybe String
+  , mapping: Dict String (List String)
   }
 
 init: () -> (Model, Cmd Msg)
@@ -33,6 +37,7 @@ init _ =
    , participants = []
    , newName = Nothing
    , newMail = Nothing
+   , mapping = Dict.empty
    }, Cmd.none)
 
 type Msg = NewParticipant | NewName String | NewMail String | DelParticipant String | NewPartner String String | Next
@@ -121,6 +126,17 @@ delParticipant model name =
   , newMail = model.participants |> List.filter (\p -> p.name == name) |> List.map (\p -> p.mail) |> List.head
   , participants = model.participants |> List.filter (\p -> p.name /= name) |> List.map (\p -> {p | partner = (if p.partner == Just name then Nothing else p.partner)})
   }
+
+mapSanta : Model -> (Model, Cmd Msg)
+mapSanta model =
+  (
+    {model | mapping = model.participants
+      |> List.map (\p -> (p.name, model.participants
+            |> List.map (\potential -> potential.name)
+            |> List.filter (\potential -> potential /= p.name && potential /= (Maybe.withDefault "" p.partner))))
+      |> Dict.fromList
+    }, Cmd.none
+  )
 
 subscriptions : Model -> Sub Msg
 subscriptions model =

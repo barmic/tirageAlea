@@ -1,7 +1,7 @@
 module Update exposing (update)
 
 import Model exposing (..)
-import Http
+import Http exposing (header)
 import Json.Encode as Encode exposing (..)
 
 update : Msg -> Model -> (Model, Cmd Msg)
@@ -65,11 +65,14 @@ sendRequest : Model -> (Model, Cmd Msg)
 sendRequest model =
   (
     { model | state = if model.state == Mail then Finished else model.state }
-  , Http.post
-      {
-        url = "/api/tirage"
+  , Http.request
+      { method = "POST"
+      , url = "/api/tirage"
+      , headers = [header "Content-Type" "application/json; charset=utf-8"]
       , body = Http.jsonBody (queryEncode model)
       , expect = Http.expectString MailSent
+      , timeout = Nothing
+      , tracker = Nothing
       }
   )
 

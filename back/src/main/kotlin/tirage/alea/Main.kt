@@ -1,7 +1,6 @@
 package tirage.alea
 
 import io.vertx.core.Future
-import io.vertx.core.Handler
 import io.vertx.ext.mail.MailConfig
 import io.vertx.ext.mail.MailMessage
 import io.vertx.ext.mail.MailResult
@@ -17,7 +16,6 @@ import org.apache.logging.log4j.Logger
 import org.apache.logging.log4j.core.lookup.StrSubstitutor
 import rx.Observable
 import rx.Single
-import java.util.stream.IntStream
 
 class Main : AbstractVerticle() {
     private val LOGGER: Logger = LogManager.getLogger()
@@ -25,28 +23,34 @@ class Main : AbstractVerticle() {
 
     override fun start(startFuture: Future<Void>?) {
         LOGGER.info("Satrting…")
+        val webRoot = System.getenv("WEB_ROOT")
+        LOGGER.debug("Web root {}", webRoot)
 
         mailClient = mailClient(vertx)
 
         val router : Router = Router.router(vertx)
-        router.post("/api*").handler(BodyHandler.create())
-        router.post("/api/tirage").handler(this::handler)
-        val webRoot = "/home/michel/Projects/Perso/tirage/front/dist"
-        router.route("/*").handler(StaticHandler.create().setAllowRootFileSystemAccess(true).setWebRoot(webRoot))
+        router.post("/api/tirage").handler(BodyHandler.create()).handler(this::handler)
+        router.route("/*").handler(StaticHandler.create()
+                .setAllowRootFileSystemAccess(true)
+                .setCachingEnabled(true)
+                .setDefaultContentEncoding("utf-8")
+                .setWebRoot(webRoot))
 
         vertx.createHttpServer()
                 .requestHandler(router)
                 .rxListen(config().getInteger("http.port", 8080))
-                .doOnError { startFuture?.fail(it.cause) }
-                .subscribe { startFuture?.complete() }
+                .doOnError { startFuture!!.fail(it.cause) }
+                .subscribe { startFuture!!.complete() }
     }
 
     private fun mailClient(vertx: Vertx) : MailClient {
-        val config = MailConfig().setSsl(true)
+        val config = MailConfig()
+
         config.hostname = System.getenv("MAIL_HOST")
+        config.port = System.getenv("MAIL_PORT").toInt()
+        config.isSsl = System.getenv("MAIL_SSL").toBoolean()
         config.username = System.getenv("MAIL_USER")
         config.password = System.getenv("MAIL_PASSWORD")
-//        envInt("MAIL_PORT").ifPresent(config::setPort);
 
         return MailClient.createShared(vertx, config)
     }
@@ -54,31 +58,36 @@ class Main : AbstractVerticle() {
     private fun handler(ctx: RoutingContext) {
         val tirage = Tirage(ctx.bodyAsJson)
         LOGGER.info("request {}", tirage)
-        var mailSent = tirage(tirage.participants)
+        val mailSent = tirage(tirage.participants)
                 .map { (participant, dest) -> sendMail(participant, dest, tirage.subject, tirage.body).toCompletable() }
 
-        Observable.from(mailSent).subscribe({ctx.response().end()}, {th -> ctx.response().setStatusCode(500).end(th.message)})
+        Observable.from(mailSent)
+                .doOnError {th -> ctx.response().setStatusCode(500).end(th.message)}
+                .doOnCompleted {ctx.response().end()}
+                .subscribe()
     }
 
     private fun tirage(participants : List<Participant>) : List<Pair<Participant, String>> {
         var solution = participants.map { it.name }.shuffled()
 
-        while (!acceptable(participants, solution)) {
+        var trying = 10
+        while (trying-- > 0 && !acceptable(participants, solution)) {
             solution = solution.shuffled()
         }
 
-        return IntRange(0, solution.size - 1).map { participants[it] to solution[it] }
+        return if (trying > 0) IntRange(0, solution.size - 1).map { participants[it] to solution[it] } else listOf()
     }
 
     private fun acceptable(participants: List<Participant>, solution: List<String>): Boolean {
-        return IntStream.range(0, solution.size).allMatch {participants[it].name != solution[it] && participants[it].partner != solution[it]}
+        return IntRange(0, solution.size - 1)
+                .all { participants[it].name != solution[it] && participants[it].partner != solution[it]}
     }
 
     private fun sendMail(participant: Participant, dest: String, subjectTemplate: String, bodyTemplate: String): Single<MailResult> {
         val sub = StrSubstitutor(mapOf("destinataire" to dest, "participant" to participant.name))
 
         val message = MailMessage()
-        message.from = "fromUser"
+        message.from = System.getenv("FROM_USER")
         message.to = listOf(participant.mail)
         message.subject = sub.replace(subjectTemplate)
         message.text = sub.replace(bodyTemplate)

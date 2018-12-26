@@ -18,7 +18,7 @@ view model =
       div [class "all"]
         [ header [] [ h1 [] [ text "Tirage Alea"]]
         , section [class "peoples"]
-        [ p [] [ text "Vous pouvez personnaliser les mails envoyés" ]
+        [ p [] [ text "Vous pouvez personnaliser les mails envoyés. '${destinataire}' sera remplacé par le destinataire du cadeau et '${participant}' sera remplacé par le destinataire du mail." ]
         , input [ placeholder "Sujet du mail", onInput NewSubject] [ text "Noël arrive - A vos cadeaux !"]
         , textarea [ placeholder "Contenu du mail", onInput NewBody] [ text ""]
         ]

@@ -1,6 +1,7 @@
 module Model exposing (..)
 
 import Dict exposing (Dict)
+import Http
 
 type StateNav = Participants | Mail | Finished
 
@@ -20,4 +21,13 @@ type alias Model =
   , mapping: Dict String (List String)
   }
 
-type Msg = NewParticipant | NewName String | NewMail String | DelParticipant String | NewPartner String String | Next | NewSubject String | NewBody String
+type Msg = NewParticipant
+         | NewName String
+         | NewMail String
+         | DelParticipant String
+         | NewPartner String String
+         | GoToMailTemplate
+         | NewSubject String
+         | NewBody String
+         | SendMail
+         | MailSent (Result Http.Error String)

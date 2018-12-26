@@ -12,7 +12,7 @@ view model =
       div [class "all"]
         [ header [] [ h1 [] [ text "Tirage Alea"]]
         , section [class "peoples"] ([p [] [text "Inscrivez la liste des participants"]] ++ (listParticipants model) ++ [newParticipantView model])
-        , button [onClick Next, disabled (List.isEmpty model.participants)] [ text "Next!" ]
+        , button [onClick GoToMailTemplate, disabled (List.isEmpty model.participants)] [ text "Next!" ]
         ]
     Mail ->
       div [class "all"]
@@ -22,7 +22,7 @@ view model =
         , input [ placeholder "Sujet du mail", onInput NewSubject] [ text "Noël arrive - A vos cadeaux !"]
         , textarea [ placeholder "Contenu du mail", onInput NewBody] [ text ""]
         ]
-        , button [onClick Next, disabled (notReadySendMail model)] [ text "Send!" ]
+        , button [onClick SendMail, disabled (notReadySendMail model)] [ text "Send!" ]
         ]
     Finished ->
       div [class "all"]

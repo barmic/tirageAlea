@@ -1,2 +1,6 @@
 elm-stuff
 dist
+.idea
+.gradle
+gradle
+build

@@ -1,6 +1,8 @@
 module Update exposing (update)
 
 import Model exposing (..)
+import Http
+import Json.Encode as Encode exposing (..)
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
@@ -15,10 +17,11 @@ update msg model =
     NewPartner a b -> ( newPartner model a b, Cmd.none )
     NewSubject subject -> ( { model | mailSubject = (noEmpty subject) }, Cmd.none )
     NewBody body -> ( { model | mailBody = (noEmpty body) }, Cmd.none )
-    Next -> ( { model | state = case model.state of
+    GoToMailTemplate -> ( { model | state = case model.state of
       Participants -> Mail
-      Mail -> Finished
-      Finished -> Finished}, Cmd.none )
+      _ -> model.state}, Cmd.none )
+    SendMail -> sendRequest model
+    MailSent a -> ( model, Cmd.none )
 
 noEmpty : String -> Maybe String
 noEmpty a = if a == "" then Nothing else Just a
@@ -57,3 +60,34 @@ delParticipant model name =
   , newMail = model.participants |> List.filter (\p -> p.name == name) |> List.map (\p -> p.mail) |> List.head
   , participants = model.participants |> List.filter (\p -> p.name /= name) |> List.map (\p -> {p | partner = (if p.partner == Just name then Nothing else p.partner)})
   }
+
+sendRequest : Model -> (Model, Cmd Msg)
+sendRequest model =
+  (
+    { model | state = if model.state == Mail then Finished else model.state }
+  , Http.post
+      {
+        url = "/api/tirage"
+      , body = Http.jsonBody (queryEncode model)
+      , expect = Http.expectString MailSent
+      }
+  )
+
+queryEncode : Model -> Encode.Value
+queryEncode model =
+  Encode.object
+    [ ("subject", Encode.string (Maybe.withDefault "" model.mailSubject)) -- TODO should not be valid
+    , ("body", Encode.string (Maybe.withDefault "" model.mailBody)) -- TODO should not be valid
+    , ("participants", Encode.list encodeParticipant model.participants)
+    ]
+
+encodeParticipant : Participant -> Encode.Value
+encodeParticipant participant =
+  Encode.object
+    (
+      [ ("name", Encode.string participant.name)
+      , ("mail", Encode.string participant.mail)
+      ]
+      ++
+      (Maybe.withDefault [] (Maybe.map (\p -> [("partner", Encode.string p)]) participant.partner))
+    )

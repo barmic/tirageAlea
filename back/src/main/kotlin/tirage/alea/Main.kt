@@ -33,6 +33,8 @@ class Main : AbstractVerticle() {
         router.route("/*").handler(StaticHandler.create()
                 .setAllowRootFileSystemAccess(true)
                 .setCachingEnabled(true)
+                .setDirectoryListing(false)
+                .setFilesReadOnly(true)
                 .setDefaultContentEncoding("utf-8")
                 .setWebRoot(webRoot))
 
@@ -59,9 +61,9 @@ class Main : AbstractVerticle() {
         val tirage = Tirage(ctx.bodyAsJson)
         LOGGER.info("request {}", tirage)
         val mailSent = tirage(tirage.participants)
-                .map { (participant, dest) -> sendMail(participant, dest, tirage.subject, tirage.body).toCompletable() }
+                .map { (participant, dest) -> sendMail(participant, dest, tirage.subject, tirage.body).toObservable() }
 
-        Observable.from(mailSent)
+        Observable.merge(mailSent)
                 .doOnError {th -> ctx.response().setStatusCode(500).end(th.message)}
                 .doOnCompleted {ctx.response().end()}
                 .subscribe()
@@ -87,12 +89,12 @@ class Main : AbstractVerticle() {
         val sub = StrSubstitutor(mapOf("destinataire" to dest, "participant" to participant.name))
 
         val message = MailMessage()
-        message.from = System.getenv("FROM_USER")
+        message.from = System.getenv("MAIL_USER")
         message.to = listOf(participant.mail)
         message.subject = sub.replace(subjectTemplate)
         message.text = sub.replace(bodyTemplate)
 
-        LOGGER.info("subject {} body {}", message.subject, message.text)
+        LOGGER.trace("subject {} body {}", message.subject, message.text)
         return mailClient!!.rxSendMail(message)
     }
 }

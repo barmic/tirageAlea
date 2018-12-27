@@ -13,7 +13,7 @@ COPY front/src src
 COPY front/elm.json .
 RUN mkdir -p dist/
 COPY front/assets dist
-RUN /node_modules/elm/bin/elm make src/Update.elm src/View.elm src/Tiragealea.elm src/Model.elm src/Tirage.elm --output=dist/tiragealea.js
+RUN /node_modules/elm/bin/elm make src/*.elm --output=dist/tiragealea.js
 
 FROM gcr.io/distroless/java
 
